@@ -1,0 +1,16 @@
+node_modules/
+.local/
+.DS_Store
+test-results/
+build/
+DerivedData/
+.build/
+.swiftpm/
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision

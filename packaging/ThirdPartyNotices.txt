@@ -1,0 +1,42 @@
+Stretto Native audio dependencies
+
+The app dynamically links the audio-default, macOS universal frameworks from
+media-kit/libmpv-darwin-build v0.7.3:
+https://github.com/media-kit/libmpv-darwin-build/tree/v0.7.3
+Binary archive SHA-256 checksums are pinned in Package.swift.
+
+mpv 0.36.0 (Mpv.framework)
+Copyright the mpv contributors; see mpv-Copyright.txt and mpv-LGPL.txt.
+Built with -Dgpl=false, no Lua, JavaScript or C plugins, and Core Audio output.
+https://github.com/mpv-player/mpv/tree/v0.36.0
+
+FFmpeg 6.0 (Avcodec, Avfilter, Avformat, Avutil, Swresample, Swscale)
+Copyright the FFmpeg contributors; see FFmpeg-LICENSE.txt and source headers.
+The build enables version3, but not GPL or nonfree code: LGPL version 3 or later.
+No audio re-encoding is performed. Encoders and muxers are not enabled.
+https://ffmpeg.org/
+
+Mbed TLS 3.4.1 (Mbedcrypto, Mbedtls, Mbedx509)
+Copyright the Mbed TLS contributors; Apache License 2.0 or GPL-2.0-or-later.
+See MbedTLS-LICENSE.txt and the license texts in its corresponding source archive.
+These libraries are dependencies of the decoder distribution. Stretto's actual
+audio transport uses Foundation URLSession and macOS certificate validation.
+https://github.com/Mbed-TLS/mbedtls/tree/v3.4.1
+
+Framework build/distribution scripts
+Copyright the media-kit/libmpv-darwin-build contributors, MIT license.
+See build-provider-LICENSE.txt.
+
+Corresponding upstream source archives and the complete provider build recipe,
+patches, package lock and Nix toolchain configuration accompany this application
+under ThirdParty/Sources. Their SHA-256 checksums are verified during packaging.
+The recipe's audio variant and default flavor produce the included frameworks;
+its default development shell requires Nix and the documented Xcode toolchain.
+See its README.md, flake.lock, packages.lock.nix and nix/packages build files.
+
+The LGPL libraries remain separate dynamic frameworks in Contents/Frameworks.
+You may replace or modify these libraries subject to their licenses, and
+re-sign your own copy of the application for macOS code-signing requirements.
+No restriction is imposed on reverse engineering for debugging modifications
+to these libraries. LGPL 2.1, LGPL 3 and its incorporated GPL 3 text accompany
+the application. No warranty is provided by these third-party projects.

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Stretto for Mac — Design Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2344bbff'/%3E%3Cpath d='M39 16v28a8 8 0 1 1-6-8V21l15-4v7z' fill='%230b1720'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/studio.css">
+  <script type="module" src="/studio.js"></script>
+</head>
+<body>
+  <header class="studio-header">
+    <a class="studio-brand" href="/" aria-label="Stretto design studio"><span class="brand-icon">s</span><span>stretto <small>FOR MAC</small></span></a>
+    <span class="header-tag">DESIGN EXPLORATION / 01</span>
+    <button class="subtle" id="summary-button">Your design brief <span id="review-count">0/10</span></button>
+  </header>
+  <main>
+    <section class="intro">
+      <div><span class="eyebrow">YOUR MUSIC. RIGHT AT HOME.</span><h1>A little more Mac.<br>A lot more <em>you.</em></h1></div>
+      <div class="intro-copy"><p>A native Stretto, shaped around the way you listen.<br>Ten moments. One cohesive app. Help choose its direction.</p><p class="muted">Explore each mock, try the controls, and tell us what feels right.<br>These are design simulations, not a connected music player.</p></div>
+    </section>
+    <section class="workbench" aria-label="Design workbench">
+      <div class="toolbar">
+        <div class="toolbar-group"><span class="control-label">APPEARANCE</span><div class="segments" id="appearance-controls"><button data-appearance="light">Light</button><button data-appearance="dark">Dark</button><button data-appearance="system">System</button></div></div>
+        <div class="toolbar-group"><span class="control-label">DIRECTION</span><div class="segments" id="direction-controls"><button data-direction="glass">Quiet glass</button><button data-direction="editorial">Editorial</button><button data-direction="compact">Precision</button></div></div>
+        <div class="toolbar-group density-control"><span class="control-label">DENSITY</span><select id="density" aria-label="Content density"><option value="comfortable">Comfortable</option><option value="dense">Dense</option></select></div>
+      </div>
+      <div class="stage-layout">
+        <nav class="mock-nav" aria-label="Ten feature mockups" id="mock-nav"></nav>
+        <div class="stage-main">
+          <div class="mock-caption"><div><span class="eyebrow" id="mock-number"></span><h2 id="mock-title"></h2></div><span class="prototype-badge">INTERACTIVE MOCK</span></div>
+          <div class="desktop" id="desktop"><div class="desktop-menubar"><strong>stretto</strong><span>File</span><span>Playback</span><span>Window</span><span class="menubar-right">Mon 9:41</span></div><div id="mock-container"></div></div>
+          <div class="mock-description"><p id="mock-description"></p><div class="navigation"><button class="subtle" id="prev" aria-label="Previous mock">←</button><span id="page-indicator"></span><button class="subtle" id="next" aria-label="Next mock">→</button></div></div>
+          <div id="demo-status" class="demo-status" role="status" aria-live="polite">Try the mock controls. No real accounts, music or downloads are used.</div>
+        </div>
+      </div>
+      <section class="feedback-panel" aria-label="Feedback on this mock">
+        <div class="feedback-heading"><span class="eyebrow">MAKE IT YOURS</span><h3 id="feedback-title">How does this feel?</h3><p>Keep the good parts. Be specific about the rest.</p></div>
+        <div class="feedback-fields"><div class="rating-row"><div><label>How much do you like this screen?</label><div class="rating" id="rating" role="group" aria-label="Screen rating"></div></div><label class="shortlist"><input type="checkbox" id="shortlist"><span>Shortlist this screen</span></label></div><label for="screen-notes" class="field-label">What would you keep or change?</label><textarea id="screen-notes" maxlength="6000" placeholder="e.g. Love the artwork-led layout. Make the sidebar smaller; keep the queue always visible."></textarea><span class="muted small" id="local-status" role="status">Changes stay in this browser until you save the brief.</span></div>
+      </section>
+    </section>
+    <section class="brief-section" id="brief">
+      <div class="brief-heading"><span class="eyebrow">THE BIG PICTURE</span><h2>Your listening, your priorities.</h2><p>Pick the features that deserve extra attention in the first release.<br>Account login, library sync, and basic playback are already core requirements.</p></div>
+      <div id="priorities" class="priorities"></div>
+      <label for="global-notes" class="field-label">Anything else the app should feel like?</label><textarea id="global-notes" maxlength="12000" placeholder="Favorite Mac apps, must-have shortcuts, things that annoy you, preferred window behavior…"></textarea>
+      <div class="brief-summary" id="brief-summary"></div>
+      <div class="save-row"><span id="save-status" role="status" aria-live="polite">Ready when you are. Save your brief into this project for implementation.</span><div><button class="subtle" id="export">Export JSON</button><button class="primary" id="save">Save design brief <span>↗</span></button></div></div>
+    </section>
+  </main>
+  <footer><span>stretto-native-macos</span><span>Built around #44bbff · Native by intention · Connected to Stretto official</span><span>LOCAL DESIGN STUDIO</span></footer>
+</body>
+</html>
