@@ -5,6 +5,8 @@ This repository contains a native SwiftUI/AppKit macOS application, its shared
 account/library/source implementation, Beans work items, and the interactive
 design studio used to approve its direction. macOS 14 or newer is required.
 
+![Stretto for macOS Now Playing](docs/images/now-playing.png)
+
 ## Build and run the native app
 
 On another Mac, install Xcode or current Xcode Command Line Tools with Swift,
