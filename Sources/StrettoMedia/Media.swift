@@ -660,16 +660,18 @@ public final class PlaybackController: ObservableObject {
         switch event {
         case .loaded: itemReady = true
         case .position(let seconds):
-            position = seconds
-        case .duration(let seconds): if seconds > 0 && !usesSourceDuration { duration = seconds }
+            if position != seconds { position = seconds }
+        case .duration(let seconds): if seconds > 0 && !usesSourceDuration && duration != seconds { duration = seconds }
         case .paused(let value): paused = value
         case .buffering(let value): buffering = value
         case .idle(let value): idle = value
         case .failed(let message): fail(message); return
         case .ended: finishPlayback(); return
         }
-        isPlaying = itemReady && wantsPlayback && !paused && !buffering && !idle
-        isLoading = wantsPlayback && (isResolving || !itemReady || buffering)
+        let playing = itemReady && wantsPlayback && !paused && !buffering && !idle
+        let loading = wantsPlayback && (isResolving || !itemReady || buffering)
+        if isPlaying != playing { isPlaying = playing }
+        if isLoading != loading { isLoading = loading }
         publishNowPlaying()
     }
 

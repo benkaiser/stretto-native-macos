@@ -2,6 +2,7 @@ import XCTest
 import AVFoundation
 import CryptoKit
 import MediaPlayer
+import Combine
 @testable import StrettoCore
 @testable import StrettoMedia
 
@@ -252,6 +253,17 @@ final class MediaTests: XCTestCase {
         defer { playback.stop() }
         try await bounded("local fixture play", playback: playback, downloads: downloads) { await playback.play(song, in: [song]) }
         try await wait("local native playback", playback: playback) { playback.isPlaying && playback.position > 0.3 }
+        var playingUpdates = 0
+        var loadingUpdates = 0
+        let playingSubscription = playback.$isPlaying.dropFirst().sink { _ in playingUpdates += 1 }
+        let loadingSubscription = playback.$isLoading.dropFirst().sink { _ in loadingUpdates += 1 }
+        let position = playback.position
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertGreaterThan(playback.position, position)
+        XCTAssertEqual(playingUpdates, 0, "Position ticks must not republish unchanged playback activity.")
+        XCTAssertEqual(loadingUpdates, 0, "Position ticks must not republish unchanged loading state.")
+        playingSubscription.cancel()
+        loadingSubscription.cancel()
         XCTAssertEqual(playback.duration, 4, accuracy: 0.15)
         XCTAssertNil(playback.errorMessage)
         playback.toggle()

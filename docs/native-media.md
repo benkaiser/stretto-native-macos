@@ -34,6 +34,8 @@ The deployed YouTube resolver can return WebM/Opus despite an Ogg MIME label. Co
 
 These checks do not verify audible output, physical media keys, authenticated/premium media or notarized distribution. `PlaybackQueueTests` hosts a 2,000-song queue to catch eager-layout regressions; the queue uses a bounded lazy scrolling panel.
 
+Song lists use one lazy child per track, including its divider. Rows observe only current-track/play-state changes, not decoder position ticks. Library membership uses an ID index rebuilt when the library changes. Native action menus and their playlist submenus are constructed only when opened, so scrolling does not build hidden menus or validate offline files on disk. `SongListPerformanceTests` scrolls 30 channel-sized rows over a 2,000-song library with 80 playlists and position updates; its maximum synchronous layout budget is 50 ms, not a claim about measured display-frame timing.
+
 ## Discovery and lyrics verification
 
 Fixture source tests cover old/new renderers, brace escaping, scoped channel sorting, pagination, repeated tokens, input allowlisting, errors, SoundCloud stream preference and safe public-client-ID refresh. `STRETTO_LIVE_SOURCE_TEST=1 swift test --filter LiveSourceTests` opts into bounded direct requests using the production SourceService session, without URLProtocol fixtures or a Stretto search proxy. Platform consent/bot/auth/throttle denials are logged as skipped, not successful discovery; parser failures fail the tests. `STRETTO_LIVE_PLAYLIST_URL` can opt into a known-small public playlist import.

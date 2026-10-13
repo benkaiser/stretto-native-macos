@@ -344,10 +344,12 @@ struct SongListView: View {
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(Array(songs.enumerated()), id: \.element.id) { index, song in
-                SongRowView(model: model, player: model.player, downloads: model.downloads,
-                            song: song, songs: songs, index: index, playlist: playlist, canAdd: canAdd,
-                            edit: edit.map { callback in { callback(song) } }, showsChannelMetadata: showsChannelMetadata)
-                if index < songs.count - 1 { Divider().padding(.leading, 62) }
+                VStack(spacing: 0) {
+                    SongRowView(model: model, playback: model.playbackActivity, downloads: model.downloads,
+                                song: song, songs: songs, index: index, playlist: playlist, canAdd: canAdd,
+                                edit: edit.map { callback in { callback(song) } }, showsChannelMetadata: showsChannelMetadata)
+                    if index < songs.count - 1 { Divider().padding(.leading, 62) }
+                }
             }
         }
     }
@@ -355,7 +357,7 @@ struct SongListView: View {
 
 private struct SongRowView: View {
     @ObservedObject var model: AppModel
-    @ObservedObject var player: PlaybackController
+    @ObservedObject var playback: PlaybackActivity
     @ObservedObject var downloads: DownloadManager
     var song: Song
     var songs: [Song]
@@ -366,17 +368,17 @@ private struct SongRowView: View {
     var showsChannelMetadata: Bool
     @State private var confirmingRemoval = false
     @State private var channelSong: Song?
-    private var inLibrary: Bool { model.library.songs.contains { $0.id == song.id } }
-    private var current: Bool { player.currentSong?.id == song.id }
+    private var inLibrary: Bool { model.librarySongIDs.contains(song.id) }
+    private var current: Bool { playback.selection.songID == song.id }
     private func activate() {
-        if current { player.resume() } else { Task { await model.play(song, in: songs.filter(\.supported)) } }
+        if current { model.player.resume() } else { Task { await model.play(song, in: songs.filter(\.supported)) } }
     }
 
     var body: some View {
         HStack(spacing: 12) {
             Button(action: activate) {
                 HStack(spacing: 12) {
-                    CoverArtView(url: song.coverURL, size: 42, isPlaying: current && player.isPlaying)
+                    CoverArtView(url: song.coverURL, size: 42, isPlaying: current && playback.selection.isPlaying)
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 5) {
                             Text(song.title.isEmpty ? "Untitled song" : song.title).font(.callout.weight(.medium)).lineLimit(1)
@@ -399,45 +401,15 @@ private struct SongRowView: View {
             }.buttonStyle(.plain).disabled(!canPreview(song))
                 .help(canPreview(song) ? "Play \(song.title)" : "This source is not supported on Mac")
                 .accessibilityLabel("Play \(song.title) by \(song.artist)")
-                .accessibilityValue(current && player.isPlaying ? "Playing" : "")
+                .accessibilityValue(current && playback.selection.isPlaying ? "Playing" : "")
             if canAdd {
                 Button { model.add(song) } label: {
                     Image(systemName: inLibrary ? "checkmark" : "plus")
                 }.disabled(inLibrary || !song.supported)
                     .help(inLibrary ? "Already in your library" : song.supported ? "Add to library" : "Play this release to find a YouTube match, then add it from Now Playing")
             }
-            Menu {
-                Button("Play", action: activate).disabled(!canPreview(song))
-                if !inLibrary { Button("Add to Library") { model.add(song) }.disabled(!song.supported) }
-                Menu("Add to Playlist") {
-                    ForEach(model.library.playlists.filter(\.editable)) { destination in
-                        Button(destination.title) { model.add(song, to: destination.title) }
-                    }
-                }.disabled(!song.supported || model.library.playlists.filter(\.editable).isEmpty)
-                if !downloads.isPinned(song) {
-                    Button("Download for Offline") { Task { await model.download(song) } }.disabled(!song.supported)
-                } else { Button("Remove Download") { model.removeDownload(song) } }
-                if downloads.localURL(for: song) != nil && !downloads.isPinned(song) {
-                    Button("Remove Playback Cache") { model.removeDownload(song) }
-                }
-                if let url = URL(string: song.url), ["http", "https"].contains(url.scheme ?? "") {
-                    Button("Open Original") { NSWorkspace.shared.open(url) }
-                }
-                if song.id.hasPrefix("y_") && !showsChannelMetadata {
-                    Button("View YouTube Channel") { channelSong = song }
-                }
-                if let edit { Divider(); Button("Edit Details…", action: edit) }
-                if let playlist, playlist.editable {
-                    Divider()
-                    Button("Move Up") { model.reorderPlaylist(playlist, from: index, to: index - 1) }.disabled(index == 0)
-                    Button("Move Down") { model.reorderPlaylist(playlist, from: index, to: index + 1) }.disabled(index == songs.count - 1)
-                    Button("Remove from Playlist", role: .destructive) { model.remove(song, from: playlist) }
-                } else if inLibrary && !canAdd {
-                    Divider()
-                    Button("Remove from Library…", role: .destructive) { confirmingRemoval = true }
-                }
-            } label: { Image(systemName: "ellipsis").frame(width: 18) }
-                .menuStyle(.borderlessButton).fixedSize().help("Actions for \(song.title)")
+            DeferredMenuButton(label: "Actions for \(song.title)", makeMenu: actionMenu)
+                .frame(width: 24, height: 22)
         }
         .padding(.horizontal, 8).padding(.vertical, 10)
         .background(current ? StrettoBrand.blue.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 7))
@@ -453,6 +425,44 @@ private struct SongRowView: View {
         .confirmationDialog("Remove “\(song.title)” from your library?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove Song", role: .destructive) { model.remove(song) }
         } message: { Text("This also removes the song from your playlists. The original source is not changed.") }
+    }
+
+    private func actionMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.addAction("Play", enabled: canPreview(song), action: activate)
+        if !inLibrary { menu.addAction("Add to Library", enabled: song.supported) { model.add(song) } }
+        let playlists = model.library.playlists.filter(\.editable)
+        let destinations = NSMenu()
+        for destination in playlists {
+            destinations.addAction(destination.title) { model.add(song, to: destination.title) }
+        }
+        let playlistItem = NSMenuItem(title: "Add to Playlist", action: nil, keyEquivalent: "")
+        playlistItem.submenu = destinations
+        playlistItem.isEnabled = song.supported && !playlists.isEmpty
+        menu.addItem(playlistItem)
+        if !downloads.isPinned(song) {
+            menu.addAction("Download for Offline", enabled: song.supported) { Task { await model.download(song) } }
+        } else { menu.addAction("Remove Download") { model.removeDownload(song) } }
+        if downloads.localURL(for: song) != nil && !downloads.isPinned(song) {
+            menu.addAction("Remove Playback Cache") { model.removeDownload(song) }
+        }
+        if let url = URL(string: song.url), ["http", "https"].contains(url.scheme ?? "") {
+            menu.addAction("Open Original") { NSWorkspace.shared.open(url) }
+        }
+        if song.id.hasPrefix("y_") && !showsChannelMetadata {
+            menu.addAction("View YouTube Channel") { channelSong = song }
+        }
+        if let edit { menu.addItem(.separator()); menu.addAction("Edit Details…", action: edit) }
+        if let playlist, playlist.editable {
+            menu.addItem(.separator())
+            menu.addAction("Move Up", enabled: index > 0) { model.reorderPlaylist(playlist, from: index, to: index - 1) }
+            menu.addAction("Move Down", enabled: index < songs.count - 1) { model.reorderPlaylist(playlist, from: index, to: index + 1) }
+            menu.addAction("Remove from Playlist") { model.remove(song, from: playlist) }
+        } else if inLibrary && !canAdd {
+            menu.addItem(.separator())
+            menu.addAction("Remove from Library…") { confirmingRemoval = true }
+        }
+        return menu
     }
 }
 

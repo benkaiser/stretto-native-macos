@@ -5,7 +5,10 @@ import StrettoMedia
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published private(set) var library = Library()
+    @Published private(set) var library = Library() {
+        didSet { librarySongIDs = Set(library.songs.map(\.id)) }
+    }
+    private(set) var librarySongIDs: Set<String> = []
     @Published private(set) var accountEmail: String?
     @Published private(set) var syncStatus = "Local library"
     @Published private(set) var isBusy = false
@@ -25,6 +28,7 @@ final class AppModel: ObservableObject {
     let sources: SourceService
     let downloads: DownloadManager
     let player: PlaybackController
+    let playbackActivity: PlaybackActivity
     let api: StrettoAPI
     private let browser = BrowserAuthentication()
     private let spotify: SpotifyClient
@@ -38,16 +42,29 @@ final class AppModel: ObservableObject {
     private var polling: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
-        let api = StrettoAPI()
+    init(api: StrettoAPI, sources: SourceService, downloads: DownloadManager, library: Library = Library()) {
         self.api = api
-        sources = SourceService(configuration: PublicConfiguration(
+        self.sources = sources
+        self.downloads = downloads
+        player = PlaybackController(sources: sources, downloads: downloads)
+        playbackActivity = PlaybackActivity(player: player)
+        spotify = SpotifyClient(api: api)
+        self.library = library
+        librarySongIDs = Set(library.songs.map(\.id))
+        state = LocalState(library: library)
+        player.$currentSong.dropFirst().sink { [weak self] _ in
+            self?.lyrics.reset()
+        }.store(in: &cancellables)
+    }
+
+    convenience init() {
+        let api = StrettoAPI()
+        let sources = SourceService(configuration: PublicConfiguration(
             youtubeRedirectEndpoint: "https://home.kaiser.lol:59436/youtuberedirect",
             soundcloudClientId: "3c2fb8cfc81c40dcfb99bb9f786f561c",
             spotifyClientId: "ac0ebd2b08a04542a8737119ff4350ab"))
-        downloads = DownloadManager(sources: sources)
-        player = PlaybackController(sources: sources, downloads: downloads)
-        spotify = SpotifyClient(api: api)
+        let downloads = DownloadManager(sources: sources)
+        self.init(api: api, sources: sources, downloads: downloads)
         do {
             guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
                 throw StrettoError.message("macOS could not locate Application Support.")
@@ -59,9 +76,6 @@ final class AppModel: ObservableObject {
             try downloads.setAccount(activeAccount)
             syncStatus = activeAccount == "guest" ? "Local library · Sign in to sync" : "Cached library · Checking session"
         } catch { errorMessage = error.localizedDescription }
-        player.$currentSong.dropFirst().sink { [weak self] _ in
-            self?.lyrics.reset()
-        }.store(in: &cancellables)
         isBusy = true
         Task { await restoreSession() }
         polling = Task { [weak self] in
